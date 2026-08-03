@@ -2,6 +2,7 @@ import random
 import json
 import time
 from datetime import datetime
+import requests
 
 temperature = 25.0
 humidity = 60
@@ -22,6 +23,13 @@ while True:
         "humidity": humidity,
         "light": random.choice(["ON","OFF"])
     }    
+
+    requests.post(
+        "http://127.0.0.1:8000/sensor",
+        json=sensor
+    )
+
+    print(sensor)
 
     print(json.dumps(sensor, indent=4))
 
