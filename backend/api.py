@@ -1,7 +1,13 @@
 from fastapi import FastAPI
 from models import SensorData
+from database import engine
+from db_models import Base
+from database import SessionLocal
+from db_models import SensorRecord
 
 app = FastAPI()
+
+Base.metadata.create_all(bind=engine)
 
 latest_sensor = None
 
@@ -16,13 +22,24 @@ def home():
 @app.post("/sensor")
 def receive_sensor(data: SensorData):
 
-    global latest_sensor
+    db = SessionLocal()
 
-    latest_sensor = data
+    record = SensorRecord(
+        room=data.room,
+        sensor_id=data.sensor_id,
+        timestamp=data.timestamp,
+        temperature=data.temperature,
+        humidity=data.humidity,
+        light=data.light
+    )
+
+    db.add(record)
+    db.commit()
+    db.close()
 
     return {
-        "status": "received"
-    }
+        "status": "saved"
+    }    
 
 
 @app.get("/sensor/latest")
@@ -36,3 +53,36 @@ def latest():
         }
 
     return latest_sensor
+
+
+@app.get("/history")
+def history():
+
+    db = SessionLocal()
+
+    # rows = db.query(SensorRecord).all()
+    row = (
+        db.query(SensorRecord)
+        .order_by(SensorRecord.id.desc())
+        .first()
+    )    
+
+    db.close()
+
+    # return rows
+    return row
+
+@app.get("/history/high-temp")
+def high_temp():
+
+    db = SessionLocal()
+
+    rows = (
+        db.query(SensorRecord)
+          .filter(SensorRecord.temperature > 27)
+          .all()
+    )
+
+    db.close()
+
+    return rows    
