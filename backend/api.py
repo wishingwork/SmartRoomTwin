@@ -4,6 +4,7 @@ from database import engine
 from db_models import Base
 from database import SessionLocal
 from db_models import SensorRecord
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
 
@@ -11,6 +12,15 @@ Base.metadata.create_all(bind=engine)
 
 latest_sensor = None
 
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 @app.get("/")
 def home():
@@ -45,14 +55,22 @@ def receive_sensor(data: SensorData):
 @app.get("/sensor/latest")
 def latest():
 
-    global latest_sensor
+    # global latest_sensor
 
-    if latest_sensor is None:
-        return {
-            "message": "No data yet"
-        }
+    # if latest_sensor is None:
+    #     return {
+    #         "message": "No data yet"
+    #     }
 
-    return latest_sensor
+    # return latest_sensor
+    db = SessionLocal()
+
+    row = (
+        db.query(SensorRecord)
+        .order_by(SensorRecord.id.desc())
+        .first()
+    )        
+    return row
 
 
 @app.get("/history")
@@ -60,17 +78,17 @@ def history():
 
     db = SessionLocal()
 
-    # rows = db.query(SensorRecord).all()
-    row = (
-        db.query(SensorRecord)
-        .order_by(SensorRecord.id.desc())
-        .first()
-    )    
+    rows = db.query(SensorRecord).all()
+    # row = (
+    #     db.query(SensorRecord)
+    #     .order_by(SensorRecord.id.desc())
+    #     .first()
+    # )    
 
     db.close()
 
-    # return rows
-    return row
+    return rows
+    # return row
 
 @app.get("/history/high-temp")
 def high_temp():
