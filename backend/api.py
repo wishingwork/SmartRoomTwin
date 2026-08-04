@@ -1,3 +1,4 @@
+# from digital_twin.SmartRoomTwin import database
 from fastapi import FastAPI
 from models import SensorData
 from database import engine
@@ -5,6 +6,8 @@ from db_models import Base
 from database import SessionLocal
 from db_models import SensorRecord
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi import WebSocket
+from websocket_manager import manager
 
 app = FastAPI()
 
@@ -30,7 +33,7 @@ def home():
 
 
 @app.post("/sensor")
-def receive_sensor(data: SensorData):
+async def receive_sensor(data: SensorData):
 
     db = SessionLocal()
 
@@ -45,6 +48,9 @@ def receive_sensor(data: SensorData):
 
     db.add(record)
     db.commit()
+
+    await manager.broadcast(data.model_dump())    
+
     db.close()
 
     return {
@@ -104,3 +110,15 @@ def high_temp():
     db.close()
 
     return rows    
+
+@app.websocket("/ws")
+async def websocket_endpoint(websocket: WebSocket):
+
+    await manager.connect(websocket)
+
+    try:
+        while True:
+            await websocket.receive_text()
+
+    except Exception:
+        manager.disconnect(websocket)    

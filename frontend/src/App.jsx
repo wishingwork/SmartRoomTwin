@@ -12,13 +12,41 @@ function App() {
     setSensor(res.data);
   }
 
+  // useEffect(() => {
+
+  //   loadSensor();
+
+  //   const timer = setInterval(loadSensor, 1000);
+
+  //   return () => clearInterval(timer);
+
+  // }, []);
+
   useEffect(() => {
 
-    loadSensor();
+    const socket =
+      new WebSocket("ws://127.0.0.1:8000/ws");
 
-    const timer = setInterval(loadSensor, 1000);
+    socket.onmessage = (event) => {
 
-    return () => clearInterval(timer);
+      const sensor =
+        JSON.parse(event.data);
+
+      setSensor(sensor);
+
+    }
+
+    socket.onopen = () => {
+
+      setInterval(() => {
+
+        socket.send("ping")
+
+      }, 30000)
+
+    }
+
+    return () => socket.close();
 
   }, []);
 
