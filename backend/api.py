@@ -8,6 +8,7 @@ from db_models import SensorRecord
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi import WebSocket
 from websocket_manager import manager
+from ai_agent import analyze_room
 
 app = FastAPI()
 
@@ -122,3 +123,16 @@ async def websocket_endpoint(websocket: WebSocket):
 
     except Exception:
         manager.disconnect(websocket)    
+
+@app.post("/ai/analyze")
+def ai_analysis(data: SensorData):
+
+    result = analyze_room(
+        data.model_dump()
+    )
+
+    return {
+
+        "analysis": result
+
+    }        

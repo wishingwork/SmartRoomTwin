@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import api from "./api";
+import AIStatus from "./components/AIStatus";
 
 function App() {
 
   const [sensor, setSensor] = useState(null);
+  const [analysis, setAnalysis] = useState("");
 
   async function loadSensor() {
 
@@ -91,6 +93,20 @@ function App() {
     return "✅ Comfortable";
   }
 
+  async function getAI() {
+
+    const response =
+      await api.post(
+        "/ai/analyze",
+        sensor
+      );
+
+    setAnalysis(
+      response.data.analysis
+    );
+
+  }
+
   return (
 
     <div style={{ padding: 40 }}>
@@ -127,7 +143,10 @@ function App() {
         />
 
       </div>
-
+      <button onClick={getAI}>
+        Analyze Room
+      </button>
+      <AIStatus message={analysis} />
     </div>
 
   )
