@@ -1,4 +1,5 @@
 # from digital_twin.SmartRoomTwin import database
+import asyncio
 from fastapi import FastAPI
 from models import SensorData
 from database import engine
@@ -10,7 +11,32 @@ from fastapi import WebSocket
 from websocket_manager import manager
 from ai_agent import analyze_room
 
-app = FastAPI()
+from contextlib import asynccontextmanager
+import threading
+
+from mqtt_client import mqtt_subscriber
+
+# app = FastAPI()
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+
+    # thread = threading.Thread(
+    #     target=mqtt_subscriber.start,
+    #     daemon=True
+    # )
+
+    # thread.start()
+
+    loop = asyncio.get_running_loop()
+
+    mqtt_subscriber.set_event_loop(loop)
+
+    mqtt_subscriber.start_in_background()
+
+    yield
+
+app = FastAPI(lifespan=lifespan)
 
 Base.metadata.create_all(bind=engine)
 
