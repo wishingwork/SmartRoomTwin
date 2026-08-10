@@ -15,6 +15,7 @@ from contextlib import asynccontextmanager
 import threading
 
 from mqtt_client import mqtt_subscriber
+from twin_engine import twin_engine
 
 # app = FastAPI()
 
@@ -30,7 +31,7 @@ async def lifespan(app: FastAPI):
 
     loop = asyncio.get_running_loop()
 
-    mqtt_subscriber.set_event_loop(loop)
+    twin_engine.set_event_loop(loop)
 
     mqtt_subscriber.start_in_background()
 
@@ -162,3 +163,16 @@ def ai_analysis(data: SensorData):
         "analysis": result
 
     }        
+
+@app.get("/twin/{room}")
+def get_twin(room: str):
+
+    state = twin_engine.get_room(room)
+
+    if state is None:
+
+        return {
+            "error": "Room not found"
+        }
+
+    return state    

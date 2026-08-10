@@ -4,8 +4,7 @@ import threading
 
 import paho.mqtt.client as mqtt
 
-from database import SessionLocal
-from db_models import SensorRecord
+from twin_engine import twin_engine
 from websocket_manager import manager
 
 
@@ -61,34 +60,7 @@ class MQTTSubscriber:
         print("MQTT received:")
         print(sensor)
 
-        # -------------------------
-        # Save to SQLite
-        # -------------------------        
-
-        db = SessionLocal()
-
-        record = SensorRecord(
-            room=sensor["room"],
-            sensor_id=sensor["sensor_id"],
-            timestamp=sensor["timestamp"],
-            temperature=sensor["temperature"],
-            humidity=sensor["humidity"],
-            light=sensor["light"]
-        )
-
-        db.add(record)
-        db.commit()
-        db.close()
-
-
-        # -------------------------
-        # Broadcast to WebSocket
-        # -------------------------
-        if self.event_loop:
-            asyncio.run_coroutine_threadsafe(
-                manager.broadcast(sensor),
-                self.event_loop
-            )
+        twin_engine.update_sensor(sensor)
 
 
     def start(self):
