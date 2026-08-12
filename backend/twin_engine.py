@@ -1,8 +1,10 @@
+from dataclasses import asdict
 from database import SessionLocal
 from db_models import SensorRecord
 import asyncio
 
 from websocket_manager import manager
+from twin_models import RoomState, TwinEvent
 
 
 class TwinEngine:
@@ -23,7 +25,18 @@ class TwinEngine:
         # -------------------------
         # 1. Update digital state
         # -------------------------
-        self.rooms[room] = sensor
+        # self.rooms[room] = sensor
+        old_state = self.rooms.get(room)
+        new_state = self.build_new_state(
+            old_state,
+            sensor
+        )
+        self.rooms[room] = new_state        
+
+        events = self.detect_events(
+            old_state,
+            new_state
+        )
 
         # -------------------------
         # 2. Save telemetry
@@ -33,11 +46,11 @@ class TwinEngine:
         # -------------------------
         # 3. Notify clients
         # -------------------------
-        if self.event_loop:
-            asyncio.run_coroutine_threadsafe(
-                manager.broadcast(sensor),
-                self.event_loop
-            )
+        self.broadcast_state(
+            new_state
+        )
+        for event in events:
+            self.handle_event(event)
 
     def save_history(self, sensor):
 
@@ -56,8 +69,156 @@ class TwinEngine:
         db.commit()
         db.close()
 
-    def get_room(self, room):
 
-        return self.rooms.get(room)    
-        
+    # -------------------------
+    # Broadcast state
+    # -------------------------
+    def broadcast_state(self, state):
+        if not self.event_loop:
+            return
+
+        message = {
+            "type": "twin_state",
+            "data": asdict(state)
+        }
+
+        asyncio.run_coroutine_threadsafe(
+            manager.broadcast(message),
+            self.event_loop
+        )
+
+    # -------------------------
+    # Handle events
+    # -------------------------
+
+    def handle_event(self, event):
+        print(
+            "Twin Event:",
+            event.event_type,
+            event.room,
+            event.data
+        )
+
+    def get_room(self, room):
+        # return self.rooms.get(room)    
+        state = self.rooms.get(room)
+        if state is None:
+            return None
+        return asdict(state)        
+
+    def build_new_state(
+        self,
+        old_state,
+        sensor
+    ):
+        if old_state is None:
+            return RoomState(
+                room=sensor["room"],
+                sensor_id=sensor["sensor_id"],
+                timestamp=sensor["timestamp"],
+                temperature=sensor.get("temperature"),
+                humidity=sensor.get("humidity"),
+                light=sensor.get("light")
+            )
+        return RoomState(
+            room=old_state.room,
+            sensor_id=sensor.get(
+                "sensor_id",
+                old_state.sensor_id
+            ),
+            timestamp=sensor.get(
+                "timestamp",
+                old_state.timestamp
+            ),
+            temperature=sensor.get(
+                "temperature",
+                old_state.temperature
+            ),
+            humidity=sensor.get(
+                "humidity",
+                old_state.humidity
+            ),
+            light=sensor.get(
+                "light",
+                old_state.light
+            )
+        )            
+
+    # -------------------------
+    # Detect changes
+    # -------------------------
+
+    def detect_events(
+        self,
+        old_state,
+        new_state
+    ):
+
+        events = []
+
+        if old_state is None:
+            return events
+
+        if (
+            old_state.temperature
+            != new_state.temperature
+        ):
+            events.append(
+                TwinEvent(
+                    event_type=
+                        "temperature_changed",
+                    room=new_state.room,
+                    timestamp=
+                        new_state.timestamp,
+                    data={
+                        "old_value":
+                            old_state.temperature,
+                        "new_value":
+                            new_state.temperature
+                    }
+                )
+            )
+
+        if (
+            old_state.humidity
+            != new_state.humidity
+        ):
+            events.append(
+                TwinEvent(
+                    event_type=
+                        "humidity_changed",
+                    room=new_state.room,
+                    timestamp=
+                        new_state.timestamp,
+                    data={
+                        "old_value":
+                            old_state.humidity,
+                        "new_value":
+                            new_state.humidity
+                    }
+                )
+            )
+
+        if (
+            old_state.light
+            != new_state.light
+        ):
+            events.append(
+                TwinEvent(
+                    event_type=
+                        "light_changed",
+                    room=new_state.room,
+                    timestamp=
+                        new_state.timestamp,
+                    data={
+                        "old_value":
+                            old_state.light,
+                        "new_value":
+                            new_state.light
+                    }
+                )
+            )
+        return events
+
+
 twin_engine = TwinEngine()

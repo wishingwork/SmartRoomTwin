@@ -31,10 +31,19 @@ function App() {
 
     socket.onmessage = (event) => {
 
-      const sensor =
+      // const sensor =
+      //   JSON.parse(event.data);
+
+      // setSensor(sensor);
+
+      const message =
         JSON.parse(event.data);
 
-      setSensor(sensor);
+      if (
+        message.type === "twin_state"
+      ) {
+        setSensor(message.data);
+      }
 
     }
 
