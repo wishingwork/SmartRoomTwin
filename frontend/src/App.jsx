@@ -6,6 +6,7 @@ function App() {
 
   const [sensor, setSensor] = useState(null);
   const [analysis, setAnalysis] = useState("");
+  const [alert, setAlert] = useState(null);
 
   async function loadSensor() {
 
@@ -39,12 +40,12 @@ function App() {
       const message =
         JSON.parse(event.data);
 
-      if (
-        message.type === "twin_state"
-      ) {
+      if (message.type === "twin_state") {
         setSensor(message.data);
       }
-
+      if (message.type === "alert") {
+        setAlert(message.data);
+      }
     }
 
     socket.onopen = () => {
@@ -152,6 +153,16 @@ function App() {
         />
 
       </div>
+      {alert && (
+        <div>
+          <h2>
+            ⚠️ {alert.severity}
+          </h2>
+          <p>
+            {alert.message}
+          </p>
+        </div>
+      )}
       <button onClick={getAI}>
         Analyze Room
       </button>

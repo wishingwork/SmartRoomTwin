@@ -5,7 +5,7 @@ import asyncio
 
 from websocket_manager import manager
 from twin_models import RoomState, TwinEvent
-
+from rule_engine import rule_engine
 
 class TwinEngine:
 
@@ -51,6 +51,16 @@ class TwinEngine:
         )
         for event in events:
             self.handle_event(event)
+
+        alerts = rule_engine.evaluate(
+            new_state
+        )
+
+        for alert in alerts:
+            self.handle_alert(
+                alert,
+                new_state
+            )
 
     def save_history(self, sensor):
 
@@ -220,5 +230,25 @@ class TwinEngine:
             )
         return events
 
+    def handle_alert(self, alert, state):
+
+        message = {
+            "type": "alert",
+            "data": {
+                "room": state.room,
+                **alert
+            }
+        }
+
+        print(
+            "ALERT:",
+            message
+        )
+
+        if self.event_loop:
+            asyncio.run_coroutine_threadsafe(
+                manager.broadcast(message),
+                self.event_loop
+            )
 
 twin_engine = TwinEngine()
