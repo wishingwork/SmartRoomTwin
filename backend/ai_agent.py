@@ -1,41 +1,100 @@
+import json
 import ollama
 
+class AIAgent:
 
-def analyze_room(sensor):
+    def __init__(self):
+        self.model = "qwen:latest"
 
-    prompt = f"""
-You are a smart building assistant.
+    def build_prompt(self, state, alerts):
 
-Analyze this room data:
+        context = {
+            "room": state.room,
+            "temperature":
+                state.temperature,
+            "humidity":
+                state.humidity,
+            "light":
+                state.light,
+            "alerts":
+                alerts
+        }
 
-Temperature:
-{sensor["temperature"]} °C
+        return f"""
+You are a Digital Twin AI assistant.
 
-Humidity:
-{sensor["humidity"]} %
+Analyze the current state of a physical room.
 
-Light:
-{sensor["light"]}
+Do not invent sensor values.
 
-Give:
-1. Current condition
-2. Possible problem
-3. Recommendation
+Current Digital Twin state:
 
-Keep answer short.
+{json.dumps(context, indent=2)}
+
+Provide:
+
+1. Situation assessment
+2. Possible cause
+3. Recommended action
+4. Whether human intervention is required
+
+Keep the answer concise.
 """
 
-    response = ollama.chat(
+    def analyze(self, state, alerts):
+        prompt = self.build_prompt(
+            state,
+            alerts
+        )
+        response = ollama.chat(
+            model=self.model,
+            messages=[
+                {
+                    "role": "user",
+                    "content": prompt
+                }
+            ]
+        )
+        return response["message"]["content"]
 
-        model="qwen:latest",
 
-        messages=[
-            {
-                "role":"user",
-                "content":prompt
-            }
-        ]
+    def analyze_room(self, sensor):
 
-    )
+        prompt = f"""
+    You are a smart building assistant.
 
-    return response["message"]["content"]
+    Analyze this room data:
+
+    Temperature:
+    {sensor["temperature"]} °C
+
+    Humidity:
+    {sensor["humidity"]} %
+
+    Light:
+    {sensor["light"]}
+
+    Give:
+    1. Current condition
+    2. Possible problem
+    3. Recommendation
+
+    Keep answer short.
+    """
+
+        response = ollama.chat(
+
+            model="qwen:latest",
+
+            messages=[
+                {
+                    "role":"user",
+                    "content":prompt
+                }
+            ]
+
+        )
+
+        return response["message"]["content"]
+
+ai_agent = AIAgent()

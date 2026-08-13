@@ -7,6 +7,7 @@ function App() {
   const [sensor, setSensor] = useState(null);
   const [analysis, setAnalysis] = useState("");
   const [alert, setAlert] = useState(null);
+  const [aiRecommendation, setAiRecommendation] = useState(null);
 
   async function loadSensor() {
 
@@ -45,6 +46,10 @@ function App() {
       }
       if (message.type === "alert") {
         setAlert(message.data);
+      }
+
+      if (message.type === "ai_recommendation") {
+        setAiRecommendation(message.data);
       }
     }
 
@@ -160,6 +165,19 @@ function App() {
           </h2>
           <p>
             {alert.message}
+          </p>
+        </div>
+      )}
+      {aiRecommendation && (
+        <div>
+          <h2>
+            AI Recommendation
+          </h2>
+          <p>
+            {
+              aiRecommendation
+                .recommendation
+            }
           </p>
         </div>
       )}

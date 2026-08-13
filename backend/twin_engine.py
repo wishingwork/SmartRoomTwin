@@ -1,3 +1,4 @@
+from email import message
 from dataclasses import asdict
 from database import SessionLocal
 from db_models import SensorRecord
@@ -6,6 +7,7 @@ import asyncio
 from websocket_manager import manager
 from twin_models import RoomState, TwinEvent
 from rule_engine import rule_engine
+from ai_agent import ai_agent
 
 class TwinEngine:
 
@@ -25,18 +27,11 @@ class TwinEngine:
         # -------------------------
         # 1. Update digital state
         # -------------------------
-        # self.rooms[room] = sensor
         old_state = self.rooms.get(room)
-        new_state = self.build_new_state(
-            old_state,
-            sensor
-        )
+        new_state = self.build_new_state(old_state, sensor)
         self.rooms[room] = new_state        
 
-        events = self.detect_events(
-            old_state,
-            new_state
-        )
+        events = self.detect_events(old_state, new_state)
 
         # -------------------------
         # 2. Save telemetry
@@ -46,21 +41,14 @@ class TwinEngine:
         # -------------------------
         # 3. Notify clients
         # -------------------------
-        self.broadcast_state(
-            new_state
-        )
+        self.broadcast_state(new_state)
         for event in events:
             self.handle_event(event)
 
-        alerts = rule_engine.evaluate(
-            new_state
-        )
+        alerts = rule_engine.evaluate(new_state)
 
-        for alert in alerts:
-            self.handle_alert(
-                alert,
-                new_state
-            )
+        if alerts:
+            self.handle_alerts(alerts, new_state)
 
     def save_history(self, sensor):
 
@@ -232,18 +220,82 @@ class TwinEngine:
 
     def handle_alert(self, alert, state):
 
+        print(
+            "ALERT:",
+            alert["type"],
+            alert["severity"],
+            state.room
+        )
+
+        recommendation = ai_agent.analyze(
+            state,
+            [alert]
+        )
+
+        print("AI Recommendation:")
+        print(recommendation)
+
+        if self.event_loop:
+            asyncio.run_coroutine_threadsafe(
+                manager.broadcast(message),
+                self.event_loop
+            )
+
+    def handle_alerts(self, alerts, state):
+
+        for alert in alerts:
+
+            self.broadcast_alert(
+                alert,
+                state
+            )
+
+        recommendation = ai_agent.analyze(
+            state,
+            alerts
+        )
+
+        self.broadcast_ai_recommendation(
+            state,
+            recommendation
+        )
+
+    def broadcast_alert(
+        self,
+        alert,
+        state
+    ):
         message = {
             "type": "alert",
             "data": {
-                "room": state.room,
+                "room":
+                    state.room,
                 **alert
             }
         }
 
-        print(
-            "ALERT:",
-            message
-        )
+        if self.event_loop:
+            asyncio.run_coroutine_threadsafe(
+                manager.broadcast(message),
+                self.event_loop
+            )
+
+    def broadcast_ai_recommendation(
+        self,
+        state,
+        recommendation
+    ):
+
+        message = {
+            "type":
+                "ai_recommendation",
+            "data": {
+                "room":
+                    state.room,
+                "recommendation":
+                    recommendation
+            }
+        }
 
         if self.event_loop:
             asyncio.run_coroutine_threadsafe(
