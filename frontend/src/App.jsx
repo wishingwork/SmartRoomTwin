@@ -10,57 +10,36 @@ function App() {
   const [aiRecommendation, setAiRecommendation] = useState(null);
 
   async function loadSensor() {
-
     const res = await api.get("/sensor/latest");
-
     setSensor(res.data);
   }
 
   // useEffect(() => {
-
   //   loadSensor();
-
   //   const timer = setInterval(loadSensor, 1000);
-
   //   return () => clearInterval(timer);
-
   // }, []);
 
   useEffect(() => {
-
-    const socket =
-      new WebSocket("ws://127.0.0.1:8000/ws");
+    const socket = new WebSocket("ws://127.0.0.1:8000/ws");
 
     socket.onmessage = (event) => {
-
-      // const sensor =
-      //   JSON.parse(event.data);
-
-      // setSensor(sensor);
-
-      const message =
-        JSON.parse(event.data);
-
+      const message = JSON.parse(event.data);
       if (message.type === "twin_state") {
         setSensor(message.data);
       }
       if (message.type === "alert") {
         setAlert(message.data);
       }
-
       if (message.type === "ai_recommendation") {
         setAiRecommendation(message.data);
       }
     }
 
     socket.onopen = () => {
-
       setInterval(() => {
-
         socket.send("ping")
-
       }, 30000)
-
     }
 
     return () => socket.close();
@@ -68,7 +47,6 @@ function App() {
   }, []);
 
   if (!sensor) {
-
     return <h2>Loading...</h2>;
   }
 
@@ -77,7 +55,6 @@ function App() {
   function SensorCard({ title, value }) {
 
     return (
-
       <div
         style={{
           width: 220,
@@ -86,19 +63,14 @@ function App() {
           padding: 20
         }}
       >
-
         <h2>{title}</h2>
-
         <h1>{value}</h1>
-
       </div>
-
     )
 
   }
 
   function roomStatus(sensor) {
-
     if (sensor.temperature > 28)
       return "🔥 Room is Hot";
 
@@ -130,17 +102,9 @@ function App() {
 
       <h2>{sensor.room}</h2>
 
-      <h2>
+      <h2>{roomStatus(sensor)}</h2>
 
-        {roomStatus(sensor)}
-
-      </h2>
-      <div
-        style={{
-          display: "flex",
-          gap: 20
-        }}
-      >
+      <div style={{ display: "flex", gap: 20 }}>
 
         <SensorCard
           title="Temperature"
@@ -160,27 +124,18 @@ function App() {
       </div>
       {alert && (
         <div>
-          <h2>
-            ⚠️ {alert.severity}
-          </h2>
-          <p>
-            {alert.message}
-          </p>
+          <h2>⚠️ {alert.severity}</h2>
+          <p>{alert.message}</p>
         </div>
       )}
+
       {aiRecommendation && (
         <div>
-          <h2>
-            AI Recommendation
-          </h2>
-          <p>
-            {
-              aiRecommendation
-                .recommendation
-            }
-          </p>
+          <h2>AI Recommendation</h2>
+          <p>{aiRecommendation.recommendation}</p>
         </div>
       )}
+
       <button onClick={getAI}>
         Analyze Room
       </button>

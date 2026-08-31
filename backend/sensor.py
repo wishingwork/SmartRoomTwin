@@ -36,13 +36,7 @@ while True:
 
     client.connect("localhost",1883)
 
-    client.publish(
-
-        "building/meeting_room/sensor",
-
-        json.dumps(sensor)
-
-    )
+    client.publish("building/meeting_room/sensor",json.dumps(sensor))
 
     print(sensor)
 

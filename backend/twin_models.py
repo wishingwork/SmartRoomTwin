@@ -10,7 +10,7 @@ class RoomState:
     temperature: Optional[float] = None
     humidity: Optional[float] = None
     light: Optional[str] = None
-
+    air_conditioner: Optional[str] = None
 
 @dataclass
 class TwinEvent:

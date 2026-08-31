@@ -100,4 +100,48 @@ class RuleEngine:
                         "Humidity returned to normal."
                 })
 
+    def get_commands(self, state):
+
+        commands = []
+
+        if (
+            state.temperature is not None
+            and state.temperature > 25
+            and state.humidity is not None
+            and state.humidity > 30
+            and state.air_conditioner != "ON"
+        ):
+
+            commands.append({
+                "device":
+                    "air_conditioner",
+                "action":
+                    "turn_on",
+                "reason":
+                    "High temperature and humidity",
+                "source":
+                    "rule"
+            })
+        
+        if (
+            state.temperature is not None
+            and state.temperature < 23
+            and state.humidity is not None
+            and state.humidity < 30
+            and state.air_conditioner != "OFF"
+        ):
+
+            commands.append({
+                "device":
+                    "air_conditioner",
+                "action":
+                    "turn_off",
+                "reason":
+                    "Low temperature and humidity",
+                "source":
+                    "rule"
+            })
+
+        return commands
+
 rule_engine = RuleEngine()        

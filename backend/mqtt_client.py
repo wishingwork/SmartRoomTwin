@@ -11,10 +11,7 @@ from websocket_manager import manager
 class MQTTSubscriber:
 
     def __init__(self):
-
-        self.client = mqtt.Client(
-            mqtt.CallbackAPIVersion.VERSION2
-        )
+        self.client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
 
         self.client.on_connect = self.on_connect
         self.client.on_message = self.on_message
@@ -22,7 +19,6 @@ class MQTTSubscriber:
         self.event_loop = None
 
     def set_event_loop(self, loop):
-
         self.event_loop = loop
 
 
@@ -34,12 +30,9 @@ class MQTTSubscriber:
         reason_code,
         properties,
     ):
-
         print("Connected to MQTT")
-
-        client.subscribe(
-            "building/meeting_room/sensor"
-        )
+        client.subscribe("building/meeting_room/sensor")
+        client.subscribe("building/meeting_room/device_state")        
 
     def on_message(
         self,
@@ -52,29 +45,30 @@ class MQTTSubscriber:
 
         # print(sensor)
 
+        # sensor = json.loads(
+        #     msg.payload.decode()
+        # )
 
-        sensor = json.loads(
-            msg.payload.decode()
-        )
+        # print("MQTT received:")
+        # print(sensor)
 
-        print("MQTT received:")
-        print(sensor)
-
-        twin_engine.update_sensor(sensor)
-
+        # twin_engine.update_sensor(sensor)
+        
+        payload = json.loads(msg.payload.decode())        
+        if msg.topic.endswith("/sensor"):
+            twin_engine.update_sensor(payload)
+        elif msg.topic.endswith("/device_state"):
+            twin_engine.update_device(payload)        
 
     def start(self):
-
         self.client.connect("localhost",1883)
         self.client.loop_forever()
 
     def start_in_background(self):
-
         thread = threading.Thread(
             target=self.start,
             daemon=True
         )
-
         thread.start()
 
 mqtt_subscriber = MQTTSubscriber()

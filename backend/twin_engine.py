@@ -1,3 +1,4 @@
+from command_engine import command_engine
 from email import message
 from dataclasses import asdict
 from database import SessionLocal
@@ -8,6 +9,8 @@ from websocket_manager import manager
 from twin_models import RoomState, TwinEvent
 from rule_engine import rule_engine
 from ai_agent import ai_agent
+from command_models import DeviceCommand
+from command_engine import command_engine
 
 class TwinEngine:
 
@@ -42,6 +45,22 @@ class TwinEngine:
         # 3. Notify clients
         # -------------------------
         self.broadcast_state(new_state)
+
+        commands = rule_engine.get_commands(
+            new_state
+        )
+        for command_data in commands:
+            command = DeviceCommand(
+                room=room,
+                device=command_data["device"],
+                action=command_data["action"],
+                reason=command_data["reason"],
+                source=command_data["source"]
+            )
+            command_engine.execute(
+                command
+            )
+
         for event in events:
             self.handle_event(event)
 
@@ -49,6 +68,23 @@ class TwinEngine:
 
         if alerts:
             self.handle_alerts(alerts, new_state)
+
+    def update_device(self, device):
+
+        room = device["room"]
+        state = self.rooms.get(room)
+        if state is None:
+            return
+
+        if (
+            device["device"]
+            == "air_conditioner"
+        ):
+            state.air_conditioner = (
+                device["state"]
+            )
+
+        self.broadcast_state(state)
 
     def save_history(self, sensor):
 
@@ -139,6 +175,10 @@ class TwinEngine:
             light=sensor.get(
                 "light",
                 old_state.light
+            ),
+            air_conditioner=sensor.get(
+                "air_conditioner",
+                old_state.air_conditioner
             )
         )            
 
