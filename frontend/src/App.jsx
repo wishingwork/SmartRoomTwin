@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import api from "./api";
 import AIStatus from "./components/AIStatus";
+import DigitalTwin3D from "./DigitalTwin3D";
 
 function App() {
 
@@ -101,6 +102,8 @@ function App() {
       <h1>Smart Room Digital Twin</h1>
 
       <h2>{sensor.room}</h2>
+
+      <DigitalTwin3D sensor={sensor} />
 
       <h2>{roomStatus(sensor)}</h2>
 
