@@ -14,6 +14,9 @@ export default function DigitalTwin3D() {
             air_conditioner: null
         });
 
+    const twinStateRef = useRef(twinState);
+    twinStateRef.current = twinState;
+
     useEffect(() => {
 
         const socket =
@@ -68,21 +71,7 @@ export default function DigitalTwin3D() {
 
     }, []);
 
-    useEffect(() => {
 
-        if (
-            twinState.air_conditioner
-            === "ON"
-        ) {
-
-            ac.material.emissive =
-                new THREE.Color(
-                    0x3366ff
-                );
-
-        }
-
-    }, [twinState]);
 
     useEffect(() => {
 
@@ -391,7 +380,7 @@ export default function DigitalTwin3D() {
             );
             if (
                 fanRef.current &&
-                twinState.air_conditioner
+                twinStateRef.current.air_conditioner
                 === "ON"
             ) {
 

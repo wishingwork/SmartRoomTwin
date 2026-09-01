@@ -15,7 +15,9 @@ class CommandEngine:
         if command.device == "air_conditioner":
             if command.action not in [
                 "turn_on",
-                "turn_off"
+                "turn_off",
+                "turn on",
+                "turn off"
             ]:
                 return False
         return True

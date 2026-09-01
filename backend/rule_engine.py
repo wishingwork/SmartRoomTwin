@@ -125,9 +125,7 @@ class RuleEngine:
         
         if (
             state.temperature is not None
-            and state.temperature < 23
-            and state.humidity is not None
-            and state.humidity < 30
+            and state.temperature < 25
             and state.air_conditioner != "OFF"
         ):
 

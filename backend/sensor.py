@@ -19,7 +19,7 @@ while True:
     humidity = max(30,min(90,humidity))
 
     sensor = {
-        "room":"Meeting Room",
+        "room":"meeting_room",
         "sensor_id":"TEMP001",
         "timestamp": datetime.now().isoformat(),
         "temperature": round(temperature,1),

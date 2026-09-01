@@ -38,7 +38,7 @@ class DeviceSimulator:
         action = command["action"]
 
         if device == "air_conditioner":
-            if action == "turn_on":
+            if action in ["turn_on", "turn on"]:
                 print("❄️ Air conditioner ON")
                 self.client.publish(
                     "building/meeting_room/device_state",
@@ -49,8 +49,16 @@ class DeviceSimulator:
                     })
                 )   
 
-            elif action == "turn_off":
+            elif action in ["turn_off", "turn off"]:
                 print("Air conditioner OFF")
+                self.client.publish(
+                    "building/meeting_room/device_state",
+                    json.dumps({
+                        "room": "meeting_room",
+                        "device": "air_conditioner",
+                        "state": "OFF"
+                    })
+                )
 
     def start(self):
         self.client.connect("localhost",1883)

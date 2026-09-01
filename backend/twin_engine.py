@@ -152,7 +152,8 @@ class TwinEngine:
                 timestamp=sensor["timestamp"],
                 temperature=sensor.get("temperature"),
                 humidity=sensor.get("humidity"),
-                light=sensor.get("light")
+                light=sensor.get("light"),
+                air_conditioner=sensor.get("air_conditioner")
             )
         return RoomState(
             room=old_state.room,
