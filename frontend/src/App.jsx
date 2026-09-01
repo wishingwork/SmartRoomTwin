@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import api from "./api";
 import AIStatus from "./components/AIStatus";
 import DigitalTwin3D from "./DigitalTwin3D";
@@ -9,6 +9,14 @@ function App() {
   const [analysis, setAnalysis] = useState("");
   const [alert, setAlert] = useState(null);
   const [aiRecommendation, setAiRecommendation] = useState(null);
+  const [
+    selectedObject,
+    setSelectedObject
+  ] = useState(null);
+  const selectedDevice =
+    selectedObject?.deviceId;
+  const socketRef =
+    useRef(null);
 
   async function loadSensor() {
     const res = await api.get("/sensor/latest");
@@ -21,8 +29,46 @@ function App() {
   //   return () => clearInterval(timer);
   // }, []);
 
+  function sendCommand(
+    device,
+    action
+  ) {
+
+    if (
+      !socketRef.current ||
+      socketRef.current.readyState
+      !== WebSocket.OPEN
+    ) {
+
+      console.error(
+        "WebSocket not connected"
+      );
+
+      return;
+    }
+
+    const command = {
+      type: "command",
+      data: {
+        room: "meeting_room",
+        device: device,
+        action: action,
+        source: "user"
+      }
+    };
+
+    socketRef.current.send(
+      JSON.stringify(command)
+    );
+
+  }
+
   useEffect(() => {
     const socket = new WebSocket("ws://127.0.0.1:8000/ws");
+
+
+    socketRef.current =
+      socket;
 
     socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
@@ -103,7 +149,72 @@ function App() {
 
       <h2>{sensor.room}</h2>
 
-      <DigitalTwin3D sensor={sensor} />
+      <DigitalTwin3D onObjectSelected={setSelectedObject} />
+      <div>
+
+        <h2>
+          Selected Object
+        </h2>
+
+        {selectedObject && (
+
+          <div>
+
+            <p>
+              Device:
+              {
+                selectedObject
+                  .deviceId
+              }
+            </p>
+
+            <p>
+              Type:
+              {
+                selectedObject
+                  .type
+              }
+            </p>
+
+            <p>
+              Room:
+              {
+                selectedObject
+                  .room
+              }
+            </p>
+
+
+            {selectedDevice === "ac-001" && (
+              <div style={{ marginTop: "10px", display: "flex", gap: "10px" }}>
+                <button
+                  onClick={() =>
+                    sendCommand(
+                      "air_conditioner",
+                      "turn_on"
+                    )
+                  }
+                >
+                  Turn ON
+                </button>
+                <button
+                  onClick={() =>
+                    sendCommand(
+                      "air_conditioner",
+                      "turn_off"
+                    )
+                  }
+                >
+                  Turn OFF
+                </button>
+              </div>
+            )}
+
+          </div>
+
+        )}
+
+      </div>
 
       <h2>{roomStatus(sensor)}</h2>
 

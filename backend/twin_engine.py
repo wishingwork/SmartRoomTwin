@@ -268,13 +268,13 @@ class TwinEngine:
             state.room
         )
 
-        recommendation = ai_agent.analyze(
-            state,
-            [alert]
-        )
+        # recommendation = ai_agent.analyze(
+        #     state,
+        #     [alert]
+        # )
 
-        print("AI Recommendation:")
-        print(recommendation)
+        # print("AI Recommendation:")
+        # print(recommendation)
 
         if self.event_loop:
             asyncio.run_coroutine_threadsafe(

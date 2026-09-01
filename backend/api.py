@@ -1,5 +1,5 @@
-# from digital_twin.SmartRoomTwin import database
 import asyncio
+import json
 from fastapi import FastAPI
 from models import SensorData
 from database import engine
@@ -16,6 +16,8 @@ import threading
 
 from mqtt_client import mqtt_subscriber
 from twin_engine import twin_engine
+from command_engine import command_engine
+from command_models import DeviceCommand
 
 # app = FastAPI()
 
@@ -141,12 +143,25 @@ def high_temp():
 
 @app.websocket("/ws")
 async def websocket_endpoint(websocket: WebSocket):
-
     await manager.connect(websocket)
 
     try:
         while True:
-            await websocket.receive_text()
+            text = await websocket.receive_text()
+            try:
+                message = json.loads(text)
+                if message.get("type") == "command":
+                    cmd_data = message.get("data", {})
+                    command = DeviceCommand(
+                        room=cmd_data.get("room", "meeting_room"),
+                        device=cmd_data.get("device"),
+                        action=cmd_data.get("action"),
+                        reason=cmd_data.get("reason", "Manual control from UI"),
+                        source=cmd_data.get("source", "user")
+                    )
+                    command_engine.execute(command)
+            except Exception as e:
+                print("Error processing WebSocket message:", e)
 
     except Exception:
         manager.disconnect(websocket)    
